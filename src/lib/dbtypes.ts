@@ -11,4 +11,5 @@ export interface Friend {
   to_id: string;
   created_at: string;
   to_profile: Profile;
+  from_profile: Profile;
 }

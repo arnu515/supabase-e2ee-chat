@@ -1,7 +1,7 @@
 import { useStore } from "@nanostores/react";
 import React from "react";
 import { Outlet } from "react-router-dom";
-import { refreshFriendRequests } from "../stores/friends";
+import { refreshFriendRequests, refreshFriends } from "../stores/friends";
 import { user as userStore } from "../stores/user";
 import supabase from "../supabase";
 import ChatSidebar from "./ChatSidebar";
@@ -12,7 +12,8 @@ const ChatLayout: React.FC = () => {
   React.useEffect(() => {
     if (!user) return;
     refreshFriendRequests();
-    const subscription = supabase
+    refreshFriends();
+    const freqSub = supabase
       .from("friends")
       .on("*", (e) => {
         console.log(e);
@@ -31,12 +32,13 @@ const ChatLayout: React.FC = () => {
             if (e.old.from_id !== user.id) return;
             refreshFriendRequests();
             alert("One of your requests were accepted!");
+            refreshFriends();
             break;
         }
       })
       .subscribe();
     return () => {
-      supabase.removeSubscription(subscription);
+      supabase.removeSubscription(freqSub);
     };
   }, [user]);
 

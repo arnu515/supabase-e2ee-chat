@@ -1,15 +1,21 @@
 import { useStore } from "@nanostores/react";
 import React from "react";
-import { Link } from "react-router-dom";
-import { profile as profileStore } from "../stores/user";
+import { Link, useNavigate } from "react-router-dom";
+import { friends as friendsStore } from "../stores/friends";
+import { profile as profileStore, user } from "../stores/user";
 
 const ChatSidebar: React.FC = () => {
   const profile = useStore(profileStore);
+  const friends = useStore(friendsStore);
+  const navigate = useNavigate();
 
   if (!profile) return null;
 
   return (
-    <nav className="shadow-lg bg-white border border-transparent rounded-lg">
+    <nav
+      className="shadow-lg bg-white border border-transparent rounded-lg overflow-auto"
+      style={{ maxHeight: "calc(100vh - 1rem)" }}
+    >
       <div
         className="border-b border-gray-300 p-4 flex items-center gap-4"
         style={{
@@ -74,6 +80,30 @@ const ChatSidebar: React.FC = () => {
           </Link>
         </div>
       </div>
+      <ul className="list-none m-0 p-0">
+        {friends?.map((friend) => {
+          const p =
+            friend.to_id === user.get()?.id
+              ? { ...friend.from_profile }
+              : { ...friend.to_profile };
+          return (
+            <li
+              onClick={() => navigate(`/chat/${p.id}`)}
+              className="mb-2 w-full flex items-center justify-between px-4 py-2 transition-colors duration-200 hover:bg-gray-200 border-b border-gray-100 cursor-pointer"
+            >
+              <div className="flex items-center gap-4">
+                <img
+                  src={p.avatar_url}
+                  alt={`Avatar of ${p.name}`}
+                  className="rounded-full border border-transparent shadow w-8"
+                />
+                <span>{p.name}</span>
+              </div>
+              <div className="flex items-center gap-2"></div>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 };
