@@ -2,6 +2,7 @@ import { useStore } from "@nanostores/react";
 import React from "react";
 import { Outlet } from "react-router-dom";
 import { encodeBase64 } from "tweetnacl-util";
+import { chat } from "../db";
 import { genKeys } from "../e2e";
 import { refreshFriendRequests, refreshFriends } from "../stores/friends";
 import { user as userStore } from "../stores/user";
@@ -39,8 +40,44 @@ const ChatLayout: React.FC = () => {
         }
       })
       .subscribe();
+    const eventsSub = supabase
+      .from("events")
+      .on("INSERT", async (e) => {
+        console.log(e);
+        if (e.new.to_id !== user.id) return;
+        switch (e.new.type) {
+          case "key_request":
+            {
+              let publicKey = localStorage.getItem("publicKey");
+              if (!publicKey) {
+                const keys = genKeys();
+                localStorage.setItem("publicKey", encodeBase64(keys.publicKey));
+                localStorage.setItem("secretKey", encodeBase64(keys.secretKey));
+                publicKey = encodeBase64(keys.publicKey);
+              }
+              await supabase.from("events").insert({
+                type: "cb:key_request",
+                from_id: user.id,
+                to_id: e.new.from_id,
+                payload: { myKey: publicKey },
+              });
+              const oppKey = e.new.payload.myKey;
+              await chat.keys.put({ key: oppKey, user_id: e.new.from_id });
+            }
+            break;
+          case "cb:key_request":
+            {
+              const oppKey = e.new.payload.myKey;
+              await chat.keys.put({ key: oppKey, user_id: e.new.from_id });
+            }
+            break;
+        }
+        await supabase.from("events").delete().eq("id", e.new.id);
+      })
+      .subscribe();
     return () => {
       supabase.removeSubscription(freqSub);
+      supabase.removeSubscription(eventsSub);
     };
   }, [user]);
 

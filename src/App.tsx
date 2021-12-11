@@ -16,6 +16,7 @@ import Chat404 from "./routes/chat/_404";
 import ChatFriends from "./routes/chat/friends";
 import NotFound from "./routes/_404";
 import { useStore } from "@nanostores/react";
+import ChatUserId from "./routes/chat/userId";
 
 const App: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
@@ -55,6 +56,7 @@ const App: React.FC = () => {
               <Route path="/chat/*" element={<ChatLayout />}>
                 <Route index element={<ChatIndex />} />
                 <Route path="friends" element={<ChatFriends />} />
+                <Route path=":userId" element={<ChatUserId />} />
                 <Route path="*" element={<Chat404 />} />
               </Route>
             )}
