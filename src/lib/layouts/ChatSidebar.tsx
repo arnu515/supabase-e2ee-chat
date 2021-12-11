@@ -90,6 +90,7 @@ const ChatSidebar: React.FC = () => {
             <li
               onClick={() => navigate(`/chat/${p.id}`)}
               className="mb-2 w-full flex items-center justify-between px-4 py-2 transition-colors duration-200 hover:bg-gray-200 border-b border-gray-100 cursor-pointer"
+              key={p.id}
             >
               <div className="flex items-center gap-4">
                 <img
