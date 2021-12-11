@@ -1,13 +1,15 @@
 import { useStore } from "@nanostores/react";
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { friends as friendsStore } from "../stores/friends";
 import { profile as profileStore, user } from "../stores/user";
+import c from "classnames";
 
 const ChatSidebar: React.FC = () => {
   const profile = useStore(profileStore);
   const friends = useStore(friendsStore);
   const navigate = useNavigate();
+  const params = useParams();
 
   if (!profile) return null;
 
@@ -88,8 +90,15 @@ const ChatSidebar: React.FC = () => {
               : { ...friend.to_profile };
           return (
             <li
-              onClick={() => navigate(`/chat/${p.id}`)}
-              className="mb-2 w-full flex items-center justify-between px-4 py-2 transition-colors duration-200 hover:bg-gray-200 border-b border-gray-100 cursor-pointer"
+              onClick={() =>
+                params.userId !== p.id && navigate(`/chat/${p.id}`)
+              }
+              className={c(
+                "mb-2 w-full flex items-center justify-between px-4 py-2 transition-colors duration-200 border-b border-gray-100",
+                params.userId === p.id
+                  ? "bg-gray-200"
+                  : "hover:bg-gray-200 cursor-pointer"
+              )}
               key={p.id}
             >
               <div className="flex items-center gap-4">
