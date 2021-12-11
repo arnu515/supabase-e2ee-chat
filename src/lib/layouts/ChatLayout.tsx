@@ -1,6 +1,8 @@
 import { useStore } from "@nanostores/react";
 import React from "react";
 import { Outlet } from "react-router-dom";
+import { encodeBase64 } from "tweetnacl-util";
+import { genKeys } from "../e2e";
 import { refreshFriendRequests, refreshFriends } from "../stores/friends";
 import { user as userStore } from "../stores/user";
 import supabase from "../supabase";
@@ -41,6 +43,18 @@ const ChatLayout: React.FC = () => {
       supabase.removeSubscription(freqSub);
     };
   }, [user]);
+
+  React.useEffect(() => {
+    // check if there are keys in localstorage, if not, generate new keys
+    if (
+      !localStorage.getItem("publicKey") ||
+      !localStorage.getItem("secretKey")
+    ) {
+      const keys = genKeys();
+      localStorage.setItem("publicKey", encodeBase64(keys.publicKey));
+      localStorage.setItem("secretKey", encodeBase64(keys.secretKey));
+    }
+  }, []);
 
   return (
     <div
