@@ -1,9 +1,9 @@
 import { useStore } from "@nanostores/react";
 import React from "react";
 import { Outlet } from "react-router-dom";
-import { encodeBase64 } from "tweetnacl-util";
+import { decodeBase64, encodeBase64 } from "tweetnacl-util";
 import { chat } from "../db";
-import { genKeys } from "../e2e";
+import { decryptJSON, genKeys } from "../e2e";
 import { refreshFriendRequests, refreshFriends } from "../stores/friends";
 import { user as userStore } from "../stores/user";
 import supabase from "../supabase";
@@ -75,9 +75,47 @@ const ChatLayout: React.FC = () => {
         await supabase.from("events").delete().eq("id", e.new.id);
       })
       .subscribe();
+    const chatsSub = supabase
+      .from("chat_messages")
+      .on("INSERT", async (e) => {
+        console.log(e);
+        if (e.new.to_id !== user.id) return;
+        // delete the message
+        await supabase.from("chat_messages").delete().eq("id", e.new.id);
+        // get their public key
+        const key = await chat.keys
+          .where("user_id")
+          .equals(e.new.from_id)
+          .first();
+        if (!key) {
+          alert("Keys have changed, refreshing page");
+          window.location.reload();
+          return;
+        }
+        // get our secret key
+        const sec = localStorage.getItem("secretKey");
+        if (!sec) {
+          alert("Keys have changed, refreshing page");
+          window.location.reload();
+          return;
+        }
+        // decrypt the message
+        console.log({ key: key.key, sec: sec });
+        const decrypted = decryptJSON(
+          e.new.message,
+          {
+            publicKey: decodeBase64(key.key),
+            secretKey: decodeBase64(sec),
+          },
+          decodeBase64(e.new.nonce)
+        );
+        console.log({ decrypted });
+      })
+      .subscribe();
     return () => {
       supabase.removeSubscription(freqSub);
       supabase.removeSubscription(eventsSub);
+      supabase.removeSubscription(chatsSub);
     };
   }, [user]);
 

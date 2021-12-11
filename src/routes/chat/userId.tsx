@@ -2,10 +2,10 @@ import { useStore } from "@nanostores/react";
 import { useLiveQuery } from "dexie-react-hooks";
 import React from "react";
 import { useParams } from "react-router-dom";
-import { encodeBase64 } from "tweetnacl-util";
+import { decodeBase64, encodeBase64 } from "tweetnacl-util";
 import Loading from "../../lib/components/Loading";
 import { chat } from "../../lib/db";
-import { genKeys } from "../../lib/e2e";
+import { encryptJSON, genKeys, genNonce } from "../../lib/e2e";
 import { friends as friendsStore } from "../../lib/stores/friends";
 import { user as userStore } from "../../lib/stores/user";
 import supabase from "../../lib/supabase";
@@ -68,9 +68,50 @@ const ChatUserId: React.FC = () => {
     } else setLoading(false);
   }, [key, params, user]);
 
-  function sendMessage(e: React.FormEvent) {
+  async function sendMessage(e: React.FormEvent) {
     e.preventDefault();
     if (!message.trim()) return;
+
+    // get the opposite user's public key
+    const oppKey = await chat.keys
+      .where("user_id")
+      .equals(friendProfile!.id)
+      .first();
+    console.log({ oppKey });
+    if (!oppKey) {
+      alert("Keys have changed, refreshing the page");
+      window.location.reload();
+      return;
+    }
+
+    // get this user's secret key
+    const myKey = localStorage.getItem("secretKey");
+    console.log({ myKey });
+    if (!myKey) {
+      alert("Keys have changed, refreshing the page");
+      window.location.reload();
+      return;
+    }
+
+    // encrypt the message
+    const nonce = genNonce();
+    const enc = encryptJSON(
+      { type: "text", message: message.trim() },
+      {
+        publicKey: decodeBase64(oppKey.key),
+        secretKey: decodeBase64(myKey),
+      },
+      nonce
+    );
+
+    // send to supabase
+    const { error } = await supabase.from("chat_messages").insert({
+      from_id: user!.id,
+      to_id: friendProfile!.id,
+      message: enc,
+      nonce: encodeBase64(nonce),
+    });
+    if (error) alert("An error occured: " + error.message);
 
     setMessage("");
   }

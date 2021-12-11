@@ -52,7 +52,9 @@ export function decryptJSON<T = any>(
   keys: nacl.BoxKeyPair,
   nonce: Uint8Array
 ): T | null {
+  console.log({ payload });
   const decrypted = decryptMessage(payload, keys, nonce);
+  console.log({ decrypted });
   if (!decrypted) return null;
   try {
     return JSON.parse(decrypted);
