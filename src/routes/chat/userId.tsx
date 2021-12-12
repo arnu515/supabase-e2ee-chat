@@ -10,6 +10,7 @@ import { friends as friendsStore } from "../../lib/stores/friends";
 import { user as userStore } from "../../lib/stores/user";
 import supabase from "../../lib/supabase";
 import c from "classnames";
+import { chats as chatsStore, refreshChatsStore } from "../../lib/stores/chat";
 
 const ChatUserId: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
@@ -24,6 +25,7 @@ const ChatUserId: React.FC = () => {
     typeof friends[0]["from_profile"] | null
   >();
   const [message, setMessage] = React.useState("");
+  const chats = useStore(chatsStore);
 
   React.useEffect(() => {
     // check if there are keys in localstorage, if not, generate new keys
@@ -113,6 +115,28 @@ const ChatUserId: React.FC = () => {
     });
     if (error) alert("An error occured: " + error.message);
 
+    // add to indexeddb
+    const messages = await chat.chats
+      .where("user_id")
+      .equals(friendProfile!.id)
+      .first();
+    if (messages) {
+      await chat.chats.update(messages.id as any, {
+        id: messages.id,
+        user_id: messages.user_id,
+        messages: [
+          ...messages.messages,
+          { type: "text", message: message.trim(), sent: true },
+        ],
+      });
+    } else {
+      await chat.chats.add({
+        user_id: friendProfile!.id,
+        messages: [{ type: "text", message: message.trim(), sent: true }],
+      });
+    }
+    await refreshChatsStore();
+
     setMessage("");
   }
 
@@ -155,6 +179,21 @@ const ChatUserId: React.FC = () => {
             </svg>
           </button>
         </div>
+      </div>
+      <div className="h-full flex flex-col gap-4">
+        {chats
+          .find((i) => i.user_id === params!.userId)
+          ?.messages.map((message, i) =>
+            message.sent ? (
+              <p className="text-blue-500" key={i}>
+                {message.message}
+              </p>
+            ) : (
+              <p className="text-gray-500" key={i}>
+                {message.message}
+              </p>
+            )
+          )}
       </div>
       <form onSubmit={sendMessage} className="flex gap-1 items-center">
         <input

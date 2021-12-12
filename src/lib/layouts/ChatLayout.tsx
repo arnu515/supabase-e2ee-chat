@@ -1,9 +1,15 @@
 import { useStore } from "@nanostores/react";
+import { useLiveQuery } from "dexie-react-hooks";
 import React from "react";
 import { Outlet } from "react-router-dom";
 import { decodeBase64, encodeBase64 } from "tweetnacl-util";
 import { chat } from "../db";
 import { decryptJSON, genKeys } from "../e2e";
+import {
+  chats as chatsStore,
+  newChats,
+  refreshChatsStore,
+} from "../stores/chat";
 import { refreshFriendRequests, refreshFriends } from "../stores/friends";
 import { user as userStore } from "../stores/user";
 import supabase from "../supabase";
@@ -11,6 +17,16 @@ import ChatSidebar from "./ChatSidebar";
 
 const ChatLayout: React.FC = () => {
   const user = useStore(userStore);
+  const chatMessages = useLiveQuery(async () => {
+    return chat.chats.toArray();
+  });
+
+  React.useEffect(() => {
+    console.log({ chatMessages });
+    if (!chatMessages?.length) return;
+    newChats.set([...newChats.get(), [...chatMessages].pop()!.user_id]);
+    chatsStore.set(chatMessages || []);
+  }, [chatMessages]);
 
   React.useEffect(() => {
     if (!user) return;
@@ -110,6 +126,25 @@ const ChatLayout: React.FC = () => {
           decodeBase64(e.new.nonce)
         );
         console.log({ decrypted });
+        // add to indexdb
+        const messages = await chat.chats
+          .where("user_id")
+          .equals(e.new.from_id)
+          .first();
+        console.log({ messages });
+        if (messages) {
+          await chat.chats.update(messages.id as any, {
+            id: messages.id,
+            user_id: messages.user_id,
+            messages: [...messages.messages, { ...decrypted, sent: false }],
+          });
+        } else {
+          await chat.chats.add({
+            user_id: e.new.from_id,
+            messages: [{ ...decrypted, sent: false }],
+          });
+        }
+        refreshChatsStore();
       })
       .subscribe();
     return () => {

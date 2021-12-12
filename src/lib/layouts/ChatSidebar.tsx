@@ -4,12 +4,14 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { friends as friendsStore } from "../stores/friends";
 import { profile as profileStore, user } from "../stores/user";
 import c from "classnames";
+import { newChats as newChatsStore } from "../stores/chat";
 
 const ChatSidebar: React.FC = () => {
   const profile = useStore(profileStore);
   const friends = useStore(friendsStore);
   const navigate = useNavigate();
   const params = useParams();
+  const newChats = useStore(newChatsStore);
 
   if (!profile) return null;
 
@@ -90,11 +92,13 @@ const ChatSidebar: React.FC = () => {
               : { ...friend.to_profile };
           return (
             <li
-              onClick={() =>
-                params.userId !== p.id && navigate(`/chat/${p.id}`)
-              }
+              onClick={() => {
+                newChatsStore.set(newChats.filter((i) => i !== p.id));
+                params.userId !== p.id && navigate(`/chat/${p.id}`);
+              }}
               className={c(
                 "mb-2 w-full flex items-center justify-between px-4 py-2 transition-colors duration-200 border-b border-gray-100",
+                newChats.find((i) => i === p.id) && "bg-yellow-200",
                 params.userId === p.id
                   ? "bg-gray-200"
                   : "hover:bg-gray-200 cursor-pointer"

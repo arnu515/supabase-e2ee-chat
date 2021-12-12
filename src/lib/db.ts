@@ -5,11 +5,17 @@ class ChatDB extends Dexie {
     user_id: string;
     key: string;
   }>;
+  chats!: Table<{
+    id?: number;
+    user_id: string;
+    messages: { type: string; message: string; sent: boolean }[];
+  }>;
 
   constructor() {
     super("chat");
-    this.version(1).stores({
+    this.version(4).stores({
       keys: "key, user_id",
+      chats: "++id, user_id",
     });
   }
 }
