@@ -7,7 +7,10 @@ import Loading from "../../lib/components/Loading";
 import { chat } from "../../lib/db";
 import { encryptJSON, genKeys, genNonce } from "../../lib/e2e";
 import { friends as friendsStore } from "../../lib/stores/friends";
-import { user as userStore } from "../../lib/stores/user";
+import {
+  user as userStore,
+  profile as profileStore,
+} from "../../lib/stores/user";
 import supabase from "../../lib/supabase";
 import c from "classnames";
 import { chats as chatsStore, refreshChatsStore } from "../../lib/stores/chat";
@@ -15,6 +18,7 @@ import { chats as chatsStore, refreshChatsStore } from "../../lib/stores/chat";
 const ChatUserId: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const user = useStore(userStore);
+  const profile = useStore(profileStore);
   const params = useParams();
   const key = useLiveQuery(async () =>
     chat.keys.where("user_id").equals(params.userId!).first()
@@ -143,7 +147,10 @@ const ChatUserId: React.FC = () => {
   if (loading || !friend || !friendProfile) return <Loading />;
 
   return (
-    <div className="shadow-lg bg-white border border-transparent rounded-lg h-full w-full flex flex-col justify-between">
+    <div
+      className="shadow-lg bg-white border border-transparent rounded-lg h-full w-full flex flex-col justify-between overflow-hidden"
+      style={{ maxHeight: "calc(100vh - 1rem)" }}
+    >
       <div
         className="border-b border-gray-300 p-4 flex items-center gap-4"
         style={{
@@ -180,18 +187,36 @@ const ChatUserId: React.FC = () => {
           </button>
         </div>
       </div>
-      <div className="h-full flex flex-col gap-4">
+      <div className="h-full flex flex-col gap-4 overflow-auto">
         {chats
           .find((i) => i.user_id === params!.userId)
           ?.messages.map((message, i) =>
             message.sent ? (
-              <p className="text-blue-500" key={i}>
-                {message.message}
-              </p>
+              <div className="flex gap-4 items-start mt-2 mx-4" key={i}>
+                <img
+                  src={profile!.avatar_url}
+                  alt={`Avatar of ${profile!.name}`}
+                  className="rounded-full border border-transparent shadow w-8"
+                />
+                <div className="border-2 border-blue-500 bg-blue-100 w-full px-4 py-2">
+                  <p className="text-sm text-blue-500 font-bold mb-2">You</p>
+                  <p>{message.message}</p>
+                </div>
+              </div>
             ) : (
-              <p className="text-gray-500" key={i}>
-                {message.message}
-              </p>
+              <div className="flex gap-4 items-start mt-2 mx-4" key={i}>
+                <img
+                  src={friendProfile!.avatar_url}
+                  alt={`Avatar of ${friendProfile!.name}`}
+                  className="rounded-full border border-transparent shadow w-8"
+                />
+                <div className="border-2 border-gray-500 bg-gray-100 w-full px-4 py-2">
+                  <p className="text-sm text-gray-500 font-bold mb-2">
+                    {friendProfile!.name}
+                  </p>
+                  <p>{message.message}</p>
+                </div>
+              </div>
             )
           )}
       </div>
