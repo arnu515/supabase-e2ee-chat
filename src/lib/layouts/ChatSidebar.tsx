@@ -58,7 +58,7 @@ const ChatSidebar: React.FC = () => {
           <Link
             aria-label="Settings"
             title="Settings"
-            to="/settings"
+            to="/chat/settings"
             className="p-2 rounded-full cursor-pointer hover:bg-gray-100 transition-colors duration-200"
           >
             <svg
