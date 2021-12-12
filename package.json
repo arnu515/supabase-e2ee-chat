@@ -15,6 +15,8 @@
     "@types/react-dom": "^17.0.0",
     "autoprefixer": "^9",
     "classnames": "^2.3.1",
+    "dexie": "^3.2.0",
+    "dexie-react-hooks": "^1.0.7",
     "formik": "^2.2.9",
     "nanostores": "^0.5.7",
     "postcss": "^7",
@@ -23,6 +25,8 @@
     "react-router-dom": "^6.0.2",
     "react-scripts": "4.0.3",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1",
     "typescript": "^4.1.2",
     "web-vitals": "^1.0.1",
     "yup": "^0.32.11"

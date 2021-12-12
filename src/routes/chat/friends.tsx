@@ -5,6 +5,7 @@ import c from "classnames";
 import {
   friendRequests as friendRequestsStore,
   refreshFriendRequests,
+  refreshFriends,
 } from "../../lib/stores/friends";
 import { useStore } from "@nanostores/react";
 import supabase from "../../lib/supabase";
@@ -56,6 +57,7 @@ const ChatFriends: React.FC = () => {
     friendRequestsStore.set(
       friendRequestsStore.get().filter((i) => i.id !== id)
     );
+    await refreshFriends();
   }
 
   async function decline(id: number) {
@@ -67,6 +69,7 @@ const ChatFriends: React.FC = () => {
     friendRequestsStore.set(
       friendRequestsStore.get().filter((i) => i.id !== id)
     );
+    await refreshFriends();
   }
 
   async function submit(oppId: string) {

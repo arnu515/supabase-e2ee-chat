@@ -1,18 +1,38 @@
 import { useStore } from "@nanostores/react";
+import { useLiveQuery } from "dexie-react-hooks";
 import React from "react";
 import { Outlet } from "react-router-dom";
-import { refreshFriendRequests } from "../stores/friends";
+import { decodeBase64, encodeBase64 } from "tweetnacl-util";
+import { chat } from "../db";
+import { decryptJSON, genKeys } from "../e2e";
+import {
+  chats as chatsStore,
+  newChats,
+  refreshChatsStore,
+} from "../stores/chat";
+import { refreshFriendRequests, refreshFriends } from "../stores/friends";
 import { user as userStore } from "../stores/user";
 import supabase from "../supabase";
 import ChatSidebar from "./ChatSidebar";
 
 const ChatLayout: React.FC = () => {
   const user = useStore(userStore);
+  const chatMessages = useLiveQuery(async () => {
+    return chat.chats.toArray();
+  });
+
+  React.useEffect(() => {
+    console.log({ chatMessages });
+    if (!chatMessages?.length) return;
+    newChats.set([...newChats.get(), [...chatMessages].pop()!.user_id]);
+    chatsStore.set(chatMessages || []);
+  }, [chatMessages]);
 
   React.useEffect(() => {
     if (!user) return;
     refreshFriendRequests();
-    const subscription = supabase
+    refreshFriends();
+    const freqSub = supabase
       .from("friends")
       .on("*", (e) => {
         console.log(e);
@@ -31,14 +51,120 @@ const ChatLayout: React.FC = () => {
             if (e.old.from_id !== user.id) return;
             refreshFriendRequests();
             alert("One of your requests were accepted!");
+            refreshFriends();
             break;
         }
       })
       .subscribe();
+    const eventsSub = supabase
+      .from("events")
+      .on("INSERT", async (e) => {
+        console.log(e);
+        if (e.new.to_id !== user.id) return;
+        switch (e.new.type) {
+          case "key_request":
+            {
+              let publicKey = localStorage.getItem("publicKey");
+              if (!publicKey) {
+                const keys = genKeys();
+                localStorage.setItem("publicKey", encodeBase64(keys.publicKey));
+                localStorage.setItem("secretKey", encodeBase64(keys.secretKey));
+                publicKey = encodeBase64(keys.publicKey);
+              }
+              await supabase.from("events").insert({
+                type: "cb:key_request",
+                from_id: user.id,
+                to_id: e.new.from_id,
+                payload: { myKey: publicKey },
+              });
+              const oppKey = e.new.payload.myKey;
+              await chat.keys.put({ key: oppKey, user_id: e.new.from_id });
+            }
+            break;
+          case "cb:key_request":
+            {
+              const oppKey = e.new.payload.myKey;
+              await chat.keys.put({ key: oppKey, user_id: e.new.from_id });
+            }
+            break;
+        }
+        await supabase.from("events").delete().eq("id", e.new.id);
+      })
+      .subscribe();
+    const chatsSub = supabase
+      .from("chat_messages")
+      .on("INSERT", async (e) => {
+        console.log(e);
+        if (e.new.to_id !== user.id) return;
+        // delete the message
+        await supabase.from("chat_messages").delete().eq("id", e.new.id);
+        // get their public key
+        const key = await chat.keys
+          .where("user_id")
+          .equals(e.new.from_id)
+          .first();
+        if (!key) {
+          alert("Keys have changed, refreshing page");
+          window.location.reload();
+          return;
+        }
+        // get our secret key
+        const sec = localStorage.getItem("secretKey");
+        if (!sec) {
+          alert("Keys have changed, refreshing page");
+          window.location.reload();
+          return;
+        }
+        // decrypt the message
+        console.log({ key: key.key, sec: sec });
+        const decrypted = decryptJSON(
+          e.new.message,
+          {
+            publicKey: decodeBase64(key.key),
+            secretKey: decodeBase64(sec),
+          },
+          decodeBase64(e.new.nonce)
+        );
+        console.log({ decrypted });
+        // add to indexdb
+        const messages = await chat.chats
+          .where("user_id")
+          .equals(e.new.from_id)
+          .first();
+        console.log({ messages });
+        if (messages) {
+          await chat.chats.update(messages.id as any, {
+            id: messages.id,
+            user_id: messages.user_id,
+            messages: [...messages.messages, { ...decrypted, sent: false }],
+          });
+        } else {
+          await chat.chats.add({
+            user_id: e.new.from_id,
+            messages: [{ ...decrypted, sent: false }],
+          });
+        }
+        refreshChatsStore();
+      })
+      .subscribe();
     return () => {
-      supabase.removeSubscription(subscription);
+      supabase.removeSubscription(freqSub);
+      supabase.removeSubscription(eventsSub);
+      supabase.removeSubscription(chatsSub);
     };
   }, [user]);
+
+  React.useEffect(() => {
+    // check if there are keys in localstorage, if not, generate new keys
+    if (
+      !localStorage.getItem("publicKey") ||
+      !localStorage.getItem("secretKey")
+    ) {
+      const keys = genKeys();
+      localStorage.setItem("publicKey", encodeBase64(keys.publicKey));
+      localStorage.setItem("secretKey", encodeBase64(keys.secretKey));
+    }
+  }, []);
 
   return (
     <div

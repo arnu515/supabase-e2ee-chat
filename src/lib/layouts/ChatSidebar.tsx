@@ -1,15 +1,25 @@
 import { useStore } from "@nanostores/react";
 import React from "react";
-import { Link } from "react-router-dom";
-import { profile as profileStore } from "../stores/user";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { friends as friendsStore } from "../stores/friends";
+import { profile as profileStore, user } from "../stores/user";
+import c from "classnames";
+import { newChats as newChatsStore } from "../stores/chat";
 
 const ChatSidebar: React.FC = () => {
   const profile = useStore(profileStore);
+  const friends = useStore(friendsStore);
+  const navigate = useNavigate();
+  const params = useParams();
+  const newChats = useStore(newChatsStore);
 
   if (!profile) return null;
 
   return (
-    <nav className="shadow-lg bg-white border border-transparent rounded-lg">
+    <nav
+      className="shadow-lg bg-white border border-transparent rounded-lg overflow-auto"
+      style={{ maxHeight: "calc(100vh - 1rem)" }}
+    >
       <div
         className="border-b border-gray-300 p-4 flex items-center gap-4"
         style={{
@@ -48,7 +58,7 @@ const ChatSidebar: React.FC = () => {
           <Link
             aria-label="Settings"
             title="Settings"
-            to="/settings"
+            to="/chat/settings"
             className="p-2 rounded-full cursor-pointer hover:bg-gray-100 transition-colors duration-200"
           >
             <svg
@@ -74,6 +84,40 @@ const ChatSidebar: React.FC = () => {
           </Link>
         </div>
       </div>
+      <ul className="list-none m-0 p-0">
+        {friends?.map((friend) => {
+          const p =
+            friend.to_id === user.get()?.id
+              ? { ...friend.from_profile }
+              : { ...friend.to_profile };
+          return (
+            <li
+              onClick={() => {
+                newChatsStore.set(newChats.filter((i) => i !== p.id));
+                params.userId !== p.id && navigate(`/chat/${p.id}`);
+              }}
+              className={c(
+                "mb-2 w-full flex items-center justify-between px-4 py-2 transition-colors duration-200 border-b border-gray-100",
+                newChats.find((i) => i === p.id) && "bg-yellow-200",
+                params.userId === p.id
+                  ? "bg-gray-200"
+                  : "hover:bg-gray-200 cursor-pointer"
+              )}
+              key={p.id}
+            >
+              <div className="flex items-center gap-4">
+                <img
+                  src={p.avatar_url}
+                  alt={`Avatar of ${p.name}`}
+                  className="rounded-full border border-transparent shadow w-8"
+                />
+                <span>{p.name}</span>
+              </div>
+              <div className="flex items-center gap-2"></div>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 };

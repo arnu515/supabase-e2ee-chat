@@ -4287,6 +4287,16 @@ detective@^5.2.0:
     defined "^1.0.0"
     minimist "^1.1.1"
 
+dexie-react-hooks@^1.0.7:
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/dexie-react-hooks/-/dexie-react-hooks-1.0.7.tgz#50316a7829a6dfa013b8471f66b010cc77f00d3e"
+  integrity sha512-hqXGFbfgu1rdfcGHQUPwW2G0iWyupoNWnk3ODvqr+HdZt2ip3y1e/dcWIOsEnlUWWCWk6a3+ok0fvECU05eE2A==
+
+dexie@^3.2.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/dexie/-/dexie-3.2.0.tgz#a1b0267b111f9422c4126da90d6b121b1deabeab"
+  integrity sha512-OpS8ss1CLHYAhxRu6hT+/Gt1uLhKCf0O18xHBdRGlemOWXXRiiOZ0ty1/bACIJzGt1DGmvarzrPwYYt9EkRZfw==
+
 didyoumean@^1.2.2:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/didyoumean/-/didyoumean-1.2.2.tgz#989346ffe9e839b4555ecf5666edea0d3e8ad037"
@@ -11249,10 +11259,20 @@ tunnel-agent@^0.6.0:
   dependencies:
     safe-buffer "^5.0.1"
 
+tweetnacl-util@^0.15.1:
+  version "0.15.1"
+  resolved "https://registry.yarnpkg.com/tweetnacl-util/-/tweetnacl-util-0.15.1.tgz#b80fcdb5c97bcc508be18c44a4be50f022eea00b"
+  integrity sha512-RKJBIj8lySrShN4w6i/BonWp2Z/uxwC3h4y7xsRrpP59ZboCd0GpEVsOnMDYLMmKBpYhb5TgHzZXy7wTfYFBRw==
+
 tweetnacl@^0.14.3, tweetnacl@~0.14.0:
   version "0.14.5"
   resolved "https://registry.yarnpkg.com/tweetnacl/-/tweetnacl-0.14.5.tgz#5ae68177f192d4456269d108afa93ff8743f4f64"
   integrity sha1-WuaBd/GS1EViadEIr6k/+HQ/T2Q=
+
+tweetnacl@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/tweetnacl/-/tweetnacl-1.0.3.tgz#ac0af71680458d8a6378d0d0d050ab1407d35596"
+  integrity sha512-6rt+RN7aOi1nGMyC4Xa5DdYiukl2UWCbcJft7YhxReBGQD7OAM8Pbxw6YMo4r2diNEA8FEmu32YOn9rhaiE5yw==
 
 type-check@^0.4.0, type-check@~0.4.0:
   version "0.4.0"
