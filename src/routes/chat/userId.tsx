@@ -1,7 +1,7 @@
 import { useStore } from "@nanostores/react";
 import { useLiveQuery } from "dexie-react-hooks";
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { decodeBase64, encodeBase64 } from "tweetnacl-util";
 import Loading from "../../lib/components/Loading";
 import { chat } from "../../lib/db";
@@ -16,6 +16,7 @@ import c from "classnames";
 import { chats as chatsStore, refreshChatsStore } from "../../lib/stores/chat";
 
 const ChatUserId: React.FC = () => {
+  const [checkingFriend, setCheckingFriend] = React.useState(true);
   const [loading, setLoading] = React.useState(true);
   const user = useStore(userStore);
   const profile = useStore(profileStore);
@@ -30,6 +31,7 @@ const ChatUserId: React.FC = () => {
   >();
   const [message, setMessage] = React.useState("");
   const chats = useStore(chatsStore);
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     // check if there are keys in localstorage, if not, generate new keys
@@ -48,14 +50,20 @@ const ChatUserId: React.FC = () => {
       const f = friends.find(
         (f) => f.from_id === params.userId || f.to_id === params.userId
       );
+      if (!f) {
+        navigate("/chat");
+        return;
+      }
       setFriend(f);
       setFriendProfile(
         f && (f.from_id === params.userId ? f.from_profile : f.to_profile)
       );
+      setCheckingFriend(false);
     }
-  }, [friends, params]);
+  }, [navigate, friends, params]);
 
   React.useEffect(() => {
+    if (checkingFriend) return;
     if (!user) return;
     console.log({ key });
     if (!key) {
@@ -72,7 +80,7 @@ const ChatUserId: React.FC = () => {
         })
         .then(() => console.log("event sent"));
     } else setLoading(false);
-  }, [key, params, user]);
+  }, [key, params, user, checkingFriend]);
 
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault();
@@ -144,7 +152,14 @@ const ChatUserId: React.FC = () => {
     setMessage("");
   }
 
-  if (loading || !friend || !friendProfile) return <Loading />;
+  async function removeFriend(id: number) {
+    const { error } = await supabase.from("friends").delete().eq("id", id);
+    if (error) return alert("An error occured" + error.message);
+    window.location.reload();
+  }
+
+  if (checkingFriend || loading || !friend || !friendProfile)
+    return <Loading />;
 
   return (
     <div
@@ -169,6 +184,7 @@ const ChatUserId: React.FC = () => {
             aria-label="Remove friend"
             title="Remove friend"
             className="p-2 rounded-full cursor-pointer hover:bg-red-100 text-red-500 transition-colors duration-200"
+            onClick={() => removeFriend(friend.id)}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
