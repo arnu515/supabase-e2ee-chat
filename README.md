@@ -6,6 +6,8 @@ An end-to-end encrypted chat using public keys and [Supabase](https://supabase.c
 
 Available at: <https://chat.arnu515.gq>
 
+[Runner Up](https://supabase.com/blog/2021/12/17/holiday-hackdays-winners-2021#best-realtime-project#runner-up-1) in the "Best Realtime" category!
+
 ## How to use
 
 - Sign in using email or github
@@ -23,7 +25,7 @@ This project was developed by me (@arnu515)! Here are my links:
 Supabase was used for all realtime events. All friend requests and chat message events were sent to supabase. Supabase also stored users' profiles. Other features of Supabase that were used were functions and triggers. It was because of supabase that I got into SQL and PLPGSQL. I am thankful to the Supabase team for building an amazing open-source BaaS that helped me dive in to SQL and PostgreSQL.
 
 Other libraries that were used were:
-- ReactJS with Crac
+- ReactJS with Craco
 - React Router DOM
 - TailwindCSS, PostCSS and classnames for styling
 - TweetNaCl for encryption
